@@ -1,0 +1,21 @@
+﻿using eCommerce.OrdersMicroservice.BusinessLogicLayer.DTO;
+using FluentValidation;
+
+namespace eCommerce.OrdersMicroservice.BusinessLogicLayer.Validators
+{
+    public class OrderItemUpdateRequestValidator : AbstractValidator<OrderItemUpdateRequest>
+    {
+        public OrderItemUpdateRequestValidator()
+        {
+            RuleFor(order => order.ProductID).NotEmpty().WithErrorCode("Product ID can't be blank");
+
+            RuleFor(order => order.UnitPrice)
+                .NotEmpty().WithErrorCode("Unit price can't be blank")
+                .GreaterThan(0).WithErrorCode("Unit Price should be greater than 0");
+
+            RuleFor(order => order.Quantity)
+                .NotEmpty().WithErrorCode("Quantity can't be blank")
+                .GreaterThan(0).WithErrorCode("Quantity should be greater than 0");
+        }
+    }
+}
