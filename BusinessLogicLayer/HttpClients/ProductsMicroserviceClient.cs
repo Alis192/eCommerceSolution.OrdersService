@@ -3,18 +3,18 @@ using System.Net.Http.Json;
 
 namespace eCommerce.OrdersMicroservice.BusinessLogicLayer.HttpClients
 {
-    public class UsersMicroserviceClient
+    public class ProductsMicroserviceClient
     {
         private readonly HttpClient _httpClient;
 
-        public UsersMicroserviceClient(HttpClient httpClient)
+        public ProductsMicroserviceClient(HttpClient httpClient)
         {
             _httpClient = httpClient;
         }
 
-        public async Task<UserDTO?> GetUserByUserID(Guid userID)
+        public async Task<ProductDTO?> GetProductByProductID(Guid productID)
         {
-            HttpResponseMessage response = await _httpClient.GetAsync($"/api/users/{userID}");
+            HttpResponseMessage response = await _httpClient.GetAsync($"/api/products/search/product-id/{productID}");
 
             if (!response.IsSuccessStatusCode)
             {
@@ -34,14 +34,14 @@ namespace eCommerce.OrdersMicroservice.BusinessLogicLayer.HttpClients
                 }
             }
 
-            UserDTO? user = await response.Content.ReadFromJsonAsync<UserDTO>();
+            ProductDTO? product = await response.Content.ReadFromJsonAsync<ProductDTO>();
 
-            if (user == null)
+            if (product == null)
             {
-                throw new ArgumentException("Invalid User ID");
+                throw new ArgumentException("Invalid Product ID");
             }
 
-            return user;
+            return product;
         }
     }
 }
