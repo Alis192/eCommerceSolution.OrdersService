@@ -3,6 +3,8 @@ using eCommerce.OrdersMicroservice.DataAccessLayer;
 using eCommerce.OrdersMicroservice.API.Middleware;
 using FluentValidation.AspNetCore;
 using eCommerce.OrdersMicroservice.BusinessLogicLayer.HttpClients;
+using Polly;
+using eCommerce.OrdersMicroservice.BusinessLogicLayer.Policies;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -26,16 +28,19 @@ builder.Services.AddCors(options =>
     options.AddDefaultPolicy(builder =>
     {
         builder.WithOrigins("http://localhost:4200")
-            .AllowAnyHeader()
-            .AllowAnyMethod();
+        .AllowAnyHeader()
+        .AllowAnyMethod();
     });
 });
 
+builder.Services.AddTransient<IUsersMicroservicePolicies, UsersMicroservicePolicies>();
 
 builder.Services.AddHttpClient<UsersMicroserviceClient>(client =>
 {
     client.BaseAddress = new Uri($"http://{builder.Configuration["UsersMicroserviceName"]}:{builder.Configuration["UsersMicroservicePort"]}");
-});
+}).AddPolicyHandler(
+    builder.Services.BuildServiceProvider().GetRequiredService<IUsersMicroservicePolicies>().GetRetryPolicy()
+    );
 
 builder.Services.AddHttpClient<ProductsMicroserviceClient>(client =>
 {
@@ -44,7 +49,7 @@ builder.Services.AddHttpClient<ProductsMicroserviceClient>(client =>
 
 var app = builder.Build();
 
-app.UseExceptionHandlingMiddleware();   
+app.UseExceptionHandlingMiddleware();
 app.UseRouting();
 
 //Cors
@@ -55,7 +60,7 @@ app.UseSwagger();
 app.UseSwaggerUI();
 
 //Auth
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 

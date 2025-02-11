@@ -30,7 +30,12 @@ namespace eCommerce.OrdersMicroservice.BusinessLogicLayer.HttpClients
 
                 else
                 {
-                    throw new HttpRequestException($"Http request failed with status code {response.StatusCode}");
+                    //throw new HttpRequestException($"Http request failed with status code {response.StatusCode}");
+                    return new UserDTO(
+                        PersonName: "Temporarly Unavailable",
+                        Email: "Temporarly Unavailable",
+                        Gender: "Temporarly Unavailable",
+                        UserID: Guid.Empty);
                 }
             }
 
