@@ -3,7 +3,6 @@ using eCommerce.OrdersMicroservice.DataAccessLayer;
 using eCommerce.OrdersMicroservice.API.Middleware;
 using FluentValidation.AspNetCore;
 using eCommerce.OrdersMicroservice.BusinessLogicLayer.HttpClients;
-using Polly;
 using eCommerce.OrdersMicroservice.BusinessLogicLayer.Policies;
 
 
@@ -34,18 +33,52 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.AddTransient<IUsersMicroservicePolicies, UsersMicroservicePolicies>();
+builder.Services.AddTransient<IProductsMicroservicePolicies, ProductsMicroservicePolicies>();
+
 
 builder.Services.AddHttpClient<UsersMicroserviceClient>(client =>
 {
     client.BaseAddress = new Uri($"http://{builder.Configuration["UsersMicroserviceName"]}:{builder.Configuration["UsersMicroservicePort"]}");
-}).AddPolicyHandler(
-    builder.Services.BuildServiceProvider().GetRequiredService<IUsersMicroservicePolicies>().GetRetryPolicy()
-    );
+})
+    .AddPolicyHandler(
+        builder.Services
+        .BuildServiceProvider()
+        .GetRequiredService<IUsersMicroservicePolicies>()
+        .GetCombinedPolicy());
+//.AddPolicyHandler(
+//    builder.Services
+//        .BuildServiceProvider()
+//        .GetRequiredService<IUsersMicroservicePolicies>()
+//        .GetRetryPolicy())
+
+//.AddPolicyHandler(
+//    builder.Services
+//        .BuildServiceProvider()
+//        .GetRequiredService<IUsersMicroservicePolicies>()
+//        .GetCircuitBreakerPolicy())
+
+//.AddPolicyHandler(
+//    builder.Services
+//        .BuildServiceProvider()
+//        .GetRequiredService<IUsersMicroservicePolicies>()
+//        .GetTimeoutPolicy());
 
 builder.Services.AddHttpClient<ProductsMicroserviceClient>(client =>
 {
     client.BaseAddress = new Uri($"http://{builder.Configuration["ProductsMicroserviceName"]}:{builder.Configuration["ProductsMicroservicePort"]}");
-});
+})
+.AddPolicyHandler(
+    builder.Services
+    .BuildServiceProvider()
+    .GetRequiredService<IProductsMicroservicePolicies>()
+    .GetFallbackPolicy())
+.AddPolicyHandler(
+    builder.Services
+    .BuildServiceProvider()
+    .GetRequiredService<IProductsMicroservicePolicies>()
+    .GetBulkheadIsolationPolicy());
+
+
 
 var app = builder.Build();
 
