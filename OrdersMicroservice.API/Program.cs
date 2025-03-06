@@ -34,7 +34,7 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddTransient<IUsersMicroservicePolicies, UsersMicroservicePolicies>();
 builder.Services.AddTransient<IProductsMicroservicePolicies, ProductsMicroservicePolicies>();
-
+builder.Services.AddTransient<IPollyPolicies, PollyPolicies>();
 
 builder.Services.AddHttpClient<UsersMicroserviceClient>(client =>
 {
@@ -45,23 +45,6 @@ builder.Services.AddHttpClient<UsersMicroserviceClient>(client =>
         .BuildServiceProvider()
         .GetRequiredService<IUsersMicroservicePolicies>()
         .GetCombinedPolicy());
-//.AddPolicyHandler(
-//    builder.Services
-//        .BuildServiceProvider()
-//        .GetRequiredService<IUsersMicroservicePolicies>()
-//        .GetRetryPolicy())
-
-//.AddPolicyHandler(
-//    builder.Services
-//        .BuildServiceProvider()
-//        .GetRequiredService<IUsersMicroservicePolicies>()
-//        .GetCircuitBreakerPolicy())
-
-//.AddPolicyHandler(
-//    builder.Services
-//        .BuildServiceProvider()
-//        .GetRequiredService<IUsersMicroservicePolicies>()
-//        .GetTimeoutPolicy());
 
 builder.Services.AddHttpClient<ProductsMicroserviceClient>(client =>
 {
