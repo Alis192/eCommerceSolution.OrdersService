@@ -84,6 +84,10 @@ namespace eCommerce.OrdersMicroservice.BusinessLogicLayer.Services
 
             //TO DO: Communicate with user service to validate user
             UserDTO? user = await _usersMicroserviceClient.GetUserByUserID(orderAddRequest.UserID);
+            if (user == null)
+            {
+                throw new ArgumentException("Invalid User ID");
+            }
 
             if (user == null)
             {
