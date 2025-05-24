@@ -27,8 +27,13 @@ namespace eCommerce.OrdersMicroservice.BusinessLogicLayer
             // Register RabbitMQ configuration 
             services.AddTransient<IRabbitMQProductNameUpdateConsumer, RabbitMQProductNameUpdateConsumer>();
 
+            services.AddTransient<IRabbitMQProductDeletionConsumer, RabbitMQProductDeletionConsumer>();
+
             // Register the hosted service for RabbitMQ product name updates
             services.AddHostedService<RabbitMQProductNameUpdateHostedService>();
+
+            services.AddHostedService<RabbitMQProductDeletionHostedService>();
+
 
             return services;
         }

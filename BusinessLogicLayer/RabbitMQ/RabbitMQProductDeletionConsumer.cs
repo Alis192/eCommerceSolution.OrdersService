@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using eCommerce.ProductService.BusinessLogicLayer.RabbitMQ;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
@@ -7,14 +8,14 @@ using System.Text.Json;
 
 namespace eCommerce.OrdersMicroservice.BusinessLogicLayer.RabbitMQ;
 
-public class RabbitMQProductNameUpdateConsumer : IDisposable, IRabbitMQProductNameUpdateConsumer
+public class RabbitMQProductDeletionConsumer : IDisposable, IRabbitMQProductDeletionConsumer
 {
     private readonly IConfiguration _configuration;
     private readonly IModel _channel;
     private readonly IConnection _connection;
-    private readonly ILogger<RabbitMQProductNameUpdateConsumer> _logger;
+    private readonly ILogger<RabbitMQProductDeletionConsumer> _logger;
 
-    public RabbitMQProductNameUpdateConsumer(IConfiguration configuration, ILogger<RabbitMQProductNameUpdateConsumer> logger)
+    public RabbitMQProductDeletionConsumer(IConfiguration configuration, ILogger<RabbitMQProductDeletionConsumer> logger)
     {
         _configuration = configuration;
         string hostName = _configuration["RabbitMQ_HostName"]!;
@@ -38,8 +39,8 @@ public class RabbitMQProductNameUpdateConsumer : IDisposable, IRabbitMQProductNa
 
     public void Consume()
     {
-        string routingKey = "product.update.name";
-        string queueName = "orders.product.name.update.queue";
+        string routingKey = "product.delete";
+        string queueName = "orders.product.delete.queue";
 
         //Create exchange
         string exchangeName = _configuration["RabbitMQ_Products_Exchange"]!;
@@ -63,10 +64,10 @@ public class RabbitMQProductNameUpdateConsumer : IDisposable, IRabbitMQProductNa
 
             if (message != null)
             {
-                ProductNameUpdateMessage? productNameUpdateMessage = JsonSerializer.Deserialize<ProductNameUpdateMessage>(message);
-                if (productNameUpdateMessage != null)
+                ProductDeletionMessage? productDeletionMessage = JsonSerializer.Deserialize<ProductDeletionMessage>(message);
+                if (productDeletionMessage != null)
                 {
-                    _logger.LogInformation($"Product name updated: {productNameUpdateMessage.ProductID}, New Name: {productNameUpdateMessage.ProductName}");
+                    _logger.LogInformation($"Product deleted: {productDeletionMessage.ProductID}, Product Name: {productDeletionMessage.ProductName}");
 
                 }
             }
