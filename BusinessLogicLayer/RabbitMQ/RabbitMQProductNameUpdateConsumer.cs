@@ -1,23 +1,27 @@
 ﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
+using RabbitMQ.Client.Events;
 using System.Text;
 using System.Text.Json;
 
-namespace eCommerce.OrdersService.BusinessLogicLayer.RabbitMQ;
+namespace eCommerce.OrdersMicroservice.BusinessLogicLayer.RabbitMQ;
 
 public class RabbitMQProductNameUpdateConsumer : IDisposable, IRabbitMQProductNameUpdateConsumer
 {
     private readonly IConfiguration _configuration;
     private readonly IModel _channel;
     private readonly IConnection _connection;
+    private readonly ILogger<RabbitMQProductNameUpdateConsumer> _logger;
 
-    public RabbitMQProductNameUpdateConsumer(IConfiguration configuration)
+    public RabbitMQProductNameUpdateConsumer(IConfiguration configuration, ILogger<RabbitMQProductNameUpdateConsumer> logger)
     {
         _configuration = configuration;
         string hostName = _configuration["RabbitMQ_HostName"]!;
         string userName = _configuration["RabbitMQ_UserName"]!;
         string password = _configuration["RabbitMQ_Password"]!;
         string port = _configuration["RabbitMQ_Port"]!;
+        _logger = logger;
 
         ConnectionFactory connectionFactory = new ConnectionFactory()
         {
@@ -46,6 +50,25 @@ public class RabbitMQProductNameUpdateConsumer : IDisposable, IRabbitMQProductNa
 
         //Bind queue to exchange
         _channel.QueueBind(queue: queueName, exchange: exchangeName, routingKey: routingKey);
+
+        // Create a consumer to listen for messages
+        EventingBasicConsumer consumer = new EventingBasicConsumer(_channel);
+
+        // Will be executed as soon as a message is received by the message queue
+        consumer.Received += (sender, args) =>
+        {
+            byte[] body = args.Body.ToArray();
+            string message = Encoding.UTF8.GetString(body);
+
+
+            if (message != null)
+            {
+                ProductNameUpdateMessage? productNameUpdateMessage = JsonSerializer.Deserialize<ProductNameUpdateMessage>(message);
+                _logger.LogInformation($"Product name updated: {productNameUpdateMessage?.ProductID}, New Name: {productNameUpdateMessage?.ProductName}");
+            }
+        };
+
+        _channel.BasicConsume(queue: queueName, consumer: consumer, autoAck: true);
     }
 
     public void Dispose()

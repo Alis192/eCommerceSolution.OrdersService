@@ -18,7 +18,7 @@ services:
      - RabbitMQ_UserName=user
      - RabbitMQ_Password=password
      - RabbitMQ_Port=5672
-     - RabbitMq_Products_Exchange = products.exchange
+     - RabbitMq_Products_Exchange=products.exchange
 
     ports: 
      - "7000:8080"
