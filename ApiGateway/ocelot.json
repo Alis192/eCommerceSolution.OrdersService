@@ -1,7 +1,7 @@
 {
   "Routes": [
     {
-      "UpstreamPathTemplate": "/gateway/Orders",
+      "UpstreamPathTemplate": "/gateway/Orders/",
       "DownstreamPathTemplate": "/api/Orders",
       "DownstreamHostAndPorts": [
         {
@@ -13,11 +13,15 @@
       http://ordersmicroservice.api:8080/api/Orders
       */
       "UpstreamHttpMethod": [ "Get", "Post", "Options" ],
-      "UpstreamScheme": "http"
+      "UpstreamScheme": "http",
+      "FileCacheOptions": {
+        "TtlSeconds": 30,
+        "Region": "orders"
+      }
     },
 
     {
-      "UpstreamPathTemplate": "/gateway/Orders/search/orderid/{orderID}",
+      "UpstreamPathTemplate": "/gateway/Orders/search/orderid/{orderID}/",
       "DownstreamPathTemplate": "/api/Orders/search/orderid/{orderID}",
       "DownstreamHostAndPorts": [
         {
@@ -30,7 +34,7 @@
     },
 
     {
-      "UpstreamPathTemplate": "/gateway/Orders/search/productid/{productID}",
+      "UpstreamPathTemplate": "/gateway/Orders/search/productid/{productID}/",
       "DownstreamPathTemplate": "/api/Orders/search/productid/{productID}",
       "DownstreamHostAndPorts": [
         {
@@ -44,7 +48,7 @@
     },
 
     {
-      "UpstreamPathTemplate": "/gateway/Orders/search/orderDate/{orderDate}",
+      "UpstreamPathTemplate": "/gateway/Orders/search/orderDate/{orderDate}/",
       "DownstreamPathTemplate": "/api/Orders/search/orderDate/{orderDate}",
       "DownstreamHostAndPorts": [
         {
@@ -58,7 +62,7 @@
     },
 
     {
-      "UpstreamPathTemplate": "/gateway/Orders/search/userid/{userID}",
+      "UpstreamPathTemplate": "/gateway/Orders/search/userid/{userID}/",
       "DownstreamPathTemplate": "/api/Orders/search/userid/{userID}",
       "DownstreamHostAndPorts": [
         {
@@ -72,7 +76,7 @@
     },
 
     {
-      "UpstreamPathTemplate": "/gateway/Orders/{orderID}",
+      "UpstreamPathTemplate": "/gateway/Orders/{orderID}/",
       "DownstreamPathTemplate": "/api/Orders/{orderID}",
       "DownstreamHostAndPorts": [
         {
@@ -86,7 +90,7 @@
     },
 
     {
-      "UpstreamPathTemplate": "/gateway/Products",
+      "UpstreamPathTemplate": "/gateway/Products/",
       "DownstreamPathTemplate": "/api/Products",
       "DownstreamHostAndPorts": [
         {
@@ -96,11 +100,34 @@
       ],
 
       "UpstreamHttpMethod": [ "Put", "Get", "Post", "Options" ],
-      "UpstreamScheme": "http"
+      "UpstreamScheme": "http",
+      "QoSOptions": {
+        "ExceptionsAllowedBeforeBreaking": 3,
+        "DurationOfBreak": 10000,
+        "TimeoutValue": 5000
+      },
+
+      "RetryOptions": {
+        "RetryCount": 3,
+        "RetryOnServerError": true
+      },
+
+      "RateLimitOptions": {
+        "Limit": 3,
+        "Period": "1m",
+        "HttpStatusCode": 429,
+        "EnableRateLimiting": true,
+        "PeriodTimespan": 30,
+        "ClientWhitelist": [
+          "client1",
+          "client2"
+        ],
+        "ClientIdHeader": "Client-Id"
+      }
     },
 
     {
-      "UpstreamPathTemplate": "/gateway/Products/{productID}",
+      "UpstreamPathTemplate": "/gateway/Products/{productID}/",
       "DownstreamPathTemplate": "/api/Products/{productID}",
       "DownstreamHostAndPorts": [
         {
@@ -114,7 +141,7 @@
     },
 
     {
-      "UpstreamPathTemplate": "/gateway/Products/search/product-id/{productID}",
+      "UpstreamPathTemplate": "/gateway/Products/search/product-id/{productID}/",
       "DownstreamPathTemplate": "/api/Products/search/product-id/{productID}",
       "DownstreamHostAndPorts": [
         {
@@ -142,8 +169,8 @@
     },
 
     {
-      "UpstreamPathTemplate": "/gateway/users/Auth/register",
-      "DownstreamPathTemplate": "/api/Users/Auth/register",
+      "UpstreamPathTemplate": "/gateway/users/Auth/register/",
+      "DownstreamPathTemplate": "/api/Auth/register",
       "DownstreamHostAndPorts": [
         {
           "Host": "users-microservice",
@@ -156,8 +183,8 @@
     },
 
     {
-      "UpstreamPathTemplate": "/gateway/users/Auth/login",
-      "DownstreamPathTemplate": "/api/Users/Auth/login",
+      "UpstreamPathTemplate": "/gateway/users/Auth/login/",
+      "DownstreamPathTemplate": "/api/Auth/login",
       "DownstreamHostAndPorts": [
         {
           "Host": "users-microservice",
@@ -170,7 +197,7 @@
     },
 
     {
-      "UpstreamPathTemplate": "/gateway/users/{userID}",
+      "UpstreamPathTemplate": "/gateway/users/{userID}/",
       "DownstreamPathTemplate": "/api/Users/{userID}",
       "DownstreamHostAndPorts": [
         {
