@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using eCommerce.OrdersMicroservice.BusinessLogicLayer.DTO;
+using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
@@ -13,8 +15,9 @@ public class RabbitMQProductNameUpdateConsumer : IDisposable, IRabbitMQProductNa
     private readonly IModel _channel;
     private readonly IConnection _connection;
     private readonly ILogger<RabbitMQProductNameUpdateConsumer> _logger;
+    private readonly IDistributedCache _cache;
 
-    public RabbitMQProductNameUpdateConsumer(IConfiguration configuration, ILogger<RabbitMQProductNameUpdateConsumer> logger)
+    public RabbitMQProductNameUpdateConsumer(IConfiguration configuration, ILogger<RabbitMQProductNameUpdateConsumer> logger, IDistributedCache cache)
     {
         _configuration = configuration;
         string hostName = _configuration["RabbitMQ_HostName"]!;
@@ -22,6 +25,7 @@ public class RabbitMQProductNameUpdateConsumer : IDisposable, IRabbitMQProductNa
         string password = _configuration["RabbitMQ_Password"]!;
         string port = _configuration["RabbitMQ_Port"]!;
         _logger = logger;
+        _cache = cache;
 
         ConnectionFactory connectionFactory = new ConnectionFactory()
         {
@@ -43,7 +47,6 @@ public class RabbitMQProductNameUpdateConsumer : IDisposable, IRabbitMQProductNa
                 {
                     {"x-match", "all" },
                     { "event", "product.update" },
-                    { "field", "name" },
                     { "RowCount", 1 }
                 };
 
@@ -63,7 +66,7 @@ public class RabbitMQProductNameUpdateConsumer : IDisposable, IRabbitMQProductNa
         EventingBasicConsumer consumer = new EventingBasicConsumer(_channel);
 
         // Will be executed as soon as a message is received by the message queue
-        consumer.Received += (sender, args) =>
+        consumer.Received += async (sender, args) =>
         {
             byte[] body = args.Body.ToArray();
             string message = Encoding.UTF8.GetString(body);
@@ -71,16 +74,29 @@ public class RabbitMQProductNameUpdateConsumer : IDisposable, IRabbitMQProductNa
 
             if (message != null)
             {
-                ProductNameUpdateMessage? productNameUpdateMessage = JsonSerializer.Deserialize<ProductNameUpdateMessage>(message);
-                if (productNameUpdateMessage != null)
+                ProductDTO? productDTO = JsonSerializer.Deserialize<ProductDTO>(message);
+                if (productDTO != null)
                 {
-                    _logger.LogInformation($"Product name updated: {productNameUpdateMessage.ProductID}, New Name: {productNameUpdateMessage.ProductName}");
-
+                    await HandleProductUpdation(productDTO);
                 }
             }
         };
 
         _channel.BasicConsume(queue: queueName, consumer: consumer, autoAck: true);
+    }
+
+    private async Task HandleProductUpdation(ProductDTO productDTO)
+    {
+        _logger.LogInformation($"Product name updated: {productDTO.ProductID}, New Name: {productDTO.ProductName}");
+
+        string productJson = JsonSerializer.Serialize(productDTO);
+
+        DistributedCacheEntryOptions options = new DistributedCacheEntryOptions()
+          .SetAbsoluteExpiration(TimeSpan.FromSeconds(300));
+
+        string cacheKeyToWrite = $"product:{productDTO.ProductID}";
+
+        await _cache.SetStringAsync(cacheKeyToWrite, productJson, options);
     }
 
     public void Dispose()

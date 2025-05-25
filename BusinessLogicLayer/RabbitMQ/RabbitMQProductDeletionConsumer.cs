@@ -1,4 +1,7 @@
-﻿using eCommerce.ProductService.BusinessLogicLayer.RabbitMQ;
+﻿using Amazon.Runtime.Internal.Util;
+using eCommerce.OrdersMicroservice.BusinessLogicLayer.DTO;
+using eCommerce.ProductService.BusinessLogicLayer.RabbitMQ;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
@@ -14,8 +17,9 @@ public class RabbitMQProductDeletionConsumer : IDisposable, IRabbitMQProductDele
     private readonly IModel _channel;
     private readonly IConnection _connection;
     private readonly ILogger<RabbitMQProductDeletionConsumer> _logger;
+    private readonly IDistributedCache _cache;
 
-    public RabbitMQProductDeletionConsumer(IConfiguration configuration, ILogger<RabbitMQProductDeletionConsumer> logger)
+    public RabbitMQProductDeletionConsumer(IConfiguration configuration, ILogger<RabbitMQProductDeletionConsumer> logger, IDistributedCache cache)
     {
         _configuration = configuration;
         string hostName = _configuration["RabbitMQ_HostName"]!;
@@ -23,6 +27,7 @@ public class RabbitMQProductDeletionConsumer : IDisposable, IRabbitMQProductDele
         string password = _configuration["RabbitMQ_Password"]!;
         string port = _configuration["RabbitMQ_Port"]!;
         _logger = logger;
+        _cache = cache;
 
         ConnectionFactory connectionFactory = new ConnectionFactory()
         {
@@ -62,7 +67,7 @@ public class RabbitMQProductDeletionConsumer : IDisposable, IRabbitMQProductDele
         EventingBasicConsumer consumer = new EventingBasicConsumer(_channel);
 
         // Will be executed as soon as a message is received by the message queue
-        consumer.Received += (sender, args) =>
+        consumer.Received += async (sender, args) =>
         {
             byte[] body = args.Body.ToArray();
             string message = Encoding.UTF8.GetString(body);
@@ -75,11 +80,19 @@ public class RabbitMQProductDeletionConsumer : IDisposable, IRabbitMQProductDele
                 {
                     _logger.LogInformation($"Product deleted: {productDeletionMessage.ProductID}, Product Name: {productDeletionMessage.ProductName}");
 
+                    await HandleProductDeletion(productDeletionMessage.ProductID);
                 }
             }
         };
 
         _channel.BasicConsume(queue: queueName, consumer: consumer, autoAck: true);
+    }
+
+    private async Task HandleProductDeletion(Guid productID)
+    {
+        string cacheKeyToWrite = $"product:{productID}";
+
+        await _cache.RemoveAsync(cacheKeyToWrite);
     }
 
     public void Dispose()
